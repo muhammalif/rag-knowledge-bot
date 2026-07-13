@@ -168,7 +168,7 @@ export default function Home() {
 
         {result && (
           <div className="flex flex-col gap-4">
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-[15px] leading-7 whitespace-pre-wrap">
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-[15px] leading-7 whitespace-pre-wrap text-zinc-900">
               {renderAnswer(result.answer)}
             </div>
 
