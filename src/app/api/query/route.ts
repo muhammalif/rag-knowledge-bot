@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await query(question, k);
+    const result = await query(question, { k });
     return NextResponse.json(result, { status: 200 });
   } catch (e) {
     return NextResponse.json(

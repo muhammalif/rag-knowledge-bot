@@ -28,7 +28,7 @@ Ingest sebuah dokumen (teks) menjadi chunk + embedding.
 ---
 
 ## POST /api/query
-Jawab pertanyaan dari knowledge base dengan citation + faithfulness score.
+Jawab pertanyaan dari knowledge base dengan citation + faithfulness & answer-relevance score.
 
 **Request**
 ```json
@@ -42,6 +42,7 @@ Jawab pertanyaan dari knowledge base dengan citation + faithfulness score.
 3. `ChatGoogle` (`gemini-flash-latest`) generate jawaban grounded + citation inline `[[n]]` ke chunk.
 4. `sources` = chunk ASLI yang di-retrieve (faithful citation), bukan hasil parse JSON LLM.
 5. `evaluateFaithfulness(answer, contexts)` → score 0..1 (LLM-judge Gemini temp 0).
+6. `evaluateAnswerRelevance(question, answer)` → score 0..1 (LLM-judge terpisah; seberapa jawaban nyambung ke pertanyaan).
 
 **Response `200`**
 ```json
@@ -56,12 +57,17 @@ Jawab pertanyaan dari knowledge base dengan citation + faithfulness score.
     "faithful": true,
     "unsupportedClaims": [],
     "reasoning": "All claims supported by context."
+  },
+  "answerRelevance": {
+    "score": 1,
+    "relevant": true,
+    "reasoning": "Answer directly addresses the question."
   }
 }
 ```
 - Inline citations `[[n]]` di `answer` map 1:1 ke n-th entry `sources` (1-indexed).
 - `traceId` ada bila Langfuse configured; di-skip bila keys hilang.
-- `faithfulness` selalu dihitung; `score` juga di-POST ke Langfuse (`/api/public/scores`).
+- `faithfulness` dan `answerRelevance` selalu dihitung; kedua `score` juga di-POST ke Langfuse (`/api/public/scores`).
 
 **Errors**
 - `400` — `question` kosong.
@@ -71,7 +77,7 @@ Jawab pertanyaan dari knowledge base dengan citation + faithfulness score.
 
 ## Monitoring
 - Semua generate call di-wrap `CallbackHandler` Langfuse (via global OTel `TracerProvider`) → trace di dashboard (model, token, latency).
-- Faithfulness score di-POST ke trace yang sama (`scoreTrace`).
+- Faithfulness + answer-relevance score di-POST ke trace yang sama (`scoreTrace`). Golden-set eval (`test:golden`) juga menambah score `correctness`.
 - Dashboard: token cost, latency, faithfulness per query.
 
 ---
@@ -86,6 +92,7 @@ Jawab pertanyaan dari knowledge base dengan citation + faithfulness score.
 | `npm run test:query` | Run a real RAG query (needs Gemini + Supabase). |
 | `npm run test:monitor` | Run a query, verify Langfuse trace arrives (needs Langfuse keys). |
 | `npm run test:eval` | Run a query, grade faithfulness, verify score lands in Langfuse. |
+| `npm run test:golden` | Run golden Q&A set; grade faithfulness + answer-relevance + correctness, verify in Langfuse. |
 
 ## Environment (`.env.local`, server-only)
 ```

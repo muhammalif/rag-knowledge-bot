@@ -12,7 +12,8 @@
     "test:ingest": "tsx scripts/test-ingest.ts",
     "test:query": "tsx scripts/test-query.ts",
     "test:monitor": "tsx scripts/test-monitor.ts",
-    "test:eval": "tsx scripts/test-eval.ts"
+    "test:eval": "tsx scripts/test-eval.ts",
+    "test:golden": "tsx scripts/test-golden.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.2.2",

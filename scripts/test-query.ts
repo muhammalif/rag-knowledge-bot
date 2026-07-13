@@ -14,7 +14,7 @@ async function main() {
   const question = "Apa saja stack utama yang dipakai di proyek RAG knowledge bot ini?";
   console.log("Q:", question, "\n");
 
-  const { answer, sources } = await query(question, 4);
+  const { answer, sources } = await query(question, { k: 4 });
 
   console.log("ANSWER:\n" + answer + "\n");
   console.log("SOURCES:", sources.length);

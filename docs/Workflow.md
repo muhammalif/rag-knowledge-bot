@@ -56,6 +56,7 @@ curl -X POST localhost:3000/api/query \
 | `npm run test:query` | jawaban grounded + source nyata |
 | `npm run test:monitor` | trace sampai Langfuse (token + latency auto-capture) |
 | `npm run test:eval` | faithfulness di-graded + score masuk Langfuse |
+| `npm run test:golden` | golden set (10 Q&A) di-graded: faithfulness + answer-relevance + correctness, report + verify Langfuse |
 | `npm run build` | production build lolos (`tsc --noEmit` juga clean) |
 
 ## 5. Observability (Langfuse — Step 5)
@@ -69,6 +70,13 @@ curl -X POST localhost:3000/api/query \
 - Score juga di-POST ke Langfuse (`/api/public/scores`) → bisa filter trace dengan faithfulness rendah.
 - `npm run test:eval` jalanin end-to-end + verifikasi score nyampe di Langfuse.
 
+## 6b. Answer relevance + golden set (Option B)
+- **Answer relevance**: tiap query juga di-graded LLM-judge (terpisah dari faithfulness) → jawaban nyambung ke pertanyaan? Field `answerRelevance` di response: `score` (0–1), `relevant` (bool), `reasoning`. Juga di-POST ke Langfuse sebagai score `answer_relevance`.
+- **Golden set** (`data/golden-qa.ts`): 10 pasang Q&A ground-truth dari knowledge base. `npm run test:golden` jalanin tiap pertanyaan lewat pipeline RAG nyata, lalu grade: `faithfulness` + `answer_relevance` (dari `query()`) + `correctness` (LLM-judge vs expected answer).
+- Report: skor rata-rata per metric + flag item dengan correctness <70% (sinyal regresi). Ketiga score di-POST ke Langfuse trace yang sama → bisa filter/bandingkan di dashboard.
+- Ini **offline eval** (pre-deploy/CI) ala JD Section 6 — beda dari online monitoring Langfuse di produksi.
+- Run auto-throttle Gemini call (~4s antar-call via `GEMINI_THROTTLE_MS`) + retry-on-429 backoff biar gak kena 429 free-tier (20 req/min). Makanya butuh ~3–4 menit.
+
 ## 7. Task umum
 - **Ganti dokumen**: edit `scripts/seed.ts`, jalanin ulang `seed.ts` + `test-ingest.ts`.
 - **Cek faithfulness query tertentu**: panggil `/api/query`, baca field `faithfulness`.
@@ -79,7 +87,9 @@ curl -X POST localhost:3000/api/query \
 - `src/lib/ingest.ts` — split + embed + insert
 - `src/lib/query.ts` — retrieve + generate + faithfulness + score
 - `src/lib/observability.ts` — OTel provider + Langfuse span processor + `scoreTrace`
-- `src/lib/eval.ts` — faithfulness LLM-as-judge
+- `src/lib/eval.ts` — faithfulness + answer-relevance + correctness LLM-as-judge
+- `data/golden-qa.ts` — golden Q&A set (ground truth)
+- `scripts/test-golden.ts` — golden-set regression eval
 - `src/app/api/query/route.ts`, `src/app/api/ingest/route.ts` — endpoint
 - `src/app/page.tsx` — UI (ingest + ask + badge faithfulness + link trace)
 - `scripts/` — seed + battery tests (`test-db`, `test-split`, `test-ingest`, `test-query`, `test-monitor`, `test-eval`)
@@ -93,5 +103,5 @@ pertanyaan ──▶ embed ──▶ similarity search ──▶ context chunks
                                                     │
                                             ──▶ Gemini generate ──▶ jawaban + [[n]] citation
                                                     │                │
-                                            faithfulness eval   Langfuse trace + score
+                                            faithfulness + answer_relevance (per query) · correctness (golden) → Langfuse 3 scores
 ```

@@ -8,7 +8,7 @@
 | 3 | Retrieve + Generate | ✅ DONE | `/api/query` + citation; embed→match_docs→ChatGoogle(gemini-flash-latest) |
 | 4 | UI | ✅ DONE | `src/app/page.tsx` client component: ask + ingest form + citation sources |
 | 5 | Monitoring | ✅ DONE | Langfuse OTel (`@langfuse/otel` + `CallbackHandler`) — trace diverifikasi mendarat, token+latency auto-capture |
-| 6 | Eval set | ✅ DONE | faithfulness LLM-judge (`eval.ts`) + score→Langfuse via public API — verified 100% |
+| 6 | Eval set (Option B) | ✅ DONE | faithfulness + answer-relevance (live, `eval.ts`) + correctness vs golden Q&A (`data/golden-qa.ts`) — `test:golden.ts` grades all 3 in ONE combined LLM call (`evaluateAll`) to stay under free-tier quota; score→Langfuse |
 
 ## Step 1 — Done ✅
 - `npx create-next-app` (Next 16, TS, src/, Tailwind v4).
@@ -36,12 +36,13 @@
 | 2026-07-12 | UI = client component (`"use client"`) + ingest box | Next 16 valid; demo self-contained (paste doc → ask) |
 | 2026-07-13 | Langfuse v5 = OTel-based; global `NodeTracerProvider` + `LangfuseSpanProcessor` (`observability.ts`) | `CallbackHandler` hanya buat span, butuh tracer provider biar diekspor; `@opentelemetry/sdk-trace-node` must `^2` (dedupe sdk-trace-base) |
 | 2026-07-13 | Faithfulness via LLM-judge Gemini temp 0 (`eval.ts`) + score→Langfuse `POST /api/public/scores` | `CallbackHandler` tidak punya method `score()`; score dikirim best-effort (fail silent) |
+| 2026-07-13 | Option B: answer-relevance LLM-judge (`evaluateAnswerRelevance`) di request path + score `answer_relevance` ke Langfuse; correctness judge (`evaluateCorrectness`) golden-only | sejajar faithfulness → monitoring JD (answer_relevance per query); correctness butuh expected answer → tidak di request path |
 
 ## Open Items / Risks
 - Next.js 16 bleeding edge — verifikasi konvensi route/UI sebelum Step 2–4.
 - `@langchain/google` v0.2.1 masih 0.x — API chat bisa berubah.
 - Embedding 3072-d (`gemini-embedding-001`) harus konsisten dgn `vector(3072)`; ANN index di-drop (pgvector cap 2000-dim) → exact cosine scan.
-- Step 6 faithfulness ✅; answer-relevance + golden Q&A set masih optional (belum dibuat).
+- Step 6 + Option B ✅: faithfulness + answer-relevance di request path (`query.ts`); golden Q&A set + correctness eval di `test-golden.ts` (offline/CI).
 
 ## Next Action
-Step 1–6 SELESAI & committed lokal (`ee6bc3e` Step 1–5, `41d34e2` Step 6), belum push remote. Sisa: (a) push ke GitHub setelah dapat URL repo; (b) optional tambah answer-relevance score + golden Q&A set (Step 6 extended); (c) tulis README demo + catatan interview; (d) deploy Vercel + Supabase.
+Step 1–6 + Option B DIIMPLEMENTASIKAN (tsc clean). Golden eval pipeline terverifikasi (test:eval 100% + item-1 golden 100/100/100); full 10-item run pending free-tier quota recovery — re-run `npm run test:golden` saat kuota pulih. Belum commit (menunggu run hijau) & belum push. Sisa: commit Option B lokal → (a) push ke GitHub (repo: github.com/muhammalif/rag-knowledge-bot); (b) README demo + catatan interview; (c) deploy Vercel + Supabase.

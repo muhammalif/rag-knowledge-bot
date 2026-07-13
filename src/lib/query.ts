@@ -3,7 +3,13 @@ import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { ChatGoogle } from "@langchain/google";
 import { getSupabase } from "./supabase";
 import { getHandler, scoreTrace } from "./observability";
-import { evaluateFaithfulness, type FaithfulnessResult } from "./eval";
+import { ensureRateLimit, callWithRetry } from "./rateLimit";
+import {
+  evaluateFaithfulness,
+  evaluateAnswerRelevance,
+  type FaithfulnessResult,
+  type AnswerRelevanceResult,
+} from "./eval";
 
 // Same embedding model as ingest (gemini-embedding-001 → 3072-d). See src/lib/ingest.ts.
 const EMBEDDING_MODEL = "gemini-embedding-001";
@@ -27,6 +33,14 @@ export interface QueryResult {
   sources: Source[];
   traceId?: string;
   faithfulness?: FaithfulnessResult;
+  answerRelevance?: AnswerRelevanceResult;
+}
+
+export interface QueryOptions {
+  k?: number;
+  /** Skip the faithfulness + answer-relevance LLM judges (used by the golden eval,
+   *  which grades everything in one combined call to stay under the free-tier quota). */
+  skipEval?: boolean;
 }
 
 function getEmbeddings(): GoogleGenerativeAIEmbeddings {
@@ -50,7 +64,10 @@ function getChat() {
  * 4. Return { answer, sources } — `sources` are the REAL retrieved chunks, so citations
  *    are faithful (not hallucinated by the model).
  */
-export async function query(question: string, k: number = TOP_K): Promise<QueryResult> {
+export async function query(question: string, opts: QueryOptions = {}): Promise<QueryResult> {
+  const k = opts.k ?? TOP_K;
+  const skipEval = opts.skipEval ?? false;
+
   if (!question.trim()) {
     return { answer: "", sources: [] };
   }
@@ -58,7 +75,8 @@ export async function query(question: string, k: number = TOP_K): Promise<QueryR
   const handler = getHandler({ sessionId: crypto.randomUUID(), tags: ["query"] });
 
   const embeddings = getEmbeddings();
-  const qVec = await embeddings.embedQuery(question);
+  await ensureRateLimit();
+  const qVec = await callWithRetry(() => embeddings.embedQuery(question));
 
   const supabase = getSupabase();
   // `q` is type `vector` — pass a vector literal string so PostgREST casts it correctly.
@@ -100,9 +118,12 @@ export async function query(question: string, k: number = TOP_K): Promise<QueryR
   const human = `Context:\n${context}\n\nQuestion: ${question}\n\nAnswer (cite with [[n]]):`;
 
   const chat = getChat();
-  const res = await chat.invoke(
-    [new SystemMessage(system), new HumanMessage(human)],
-    { callbacks: [handler] },
+  await ensureRateLimit();
+  const res = await callWithRetry(() =>
+    chat.invoke(
+      [new SystemMessage(system), new HumanMessage(human)],
+      { callbacks: [handler] },
+    ),
   );
 
   const answer = res.content.toString();
@@ -114,18 +135,33 @@ export async function query(question: string, k: number = TOP_K): Promise<QueryR
     content: r.content,
   }));
 
-  const faithfulness = await evaluateFaithfulness(
-    answer,
-    sources.map((s) => s.content),
-  );
+  let faithfulness: FaithfulnessResult | undefined;
+  let answerRelevance: AnswerRelevanceResult | undefined;
 
   const traceId = handler.last_trace_id ?? undefined;
-  if (traceId) {
-    // Close the observability loop: cost + latency (Step 5) + faithfulness (Step 6).
-    await scoreTrace(traceId, "faithfulness", faithfulness.score, faithfulness.reasoning).catch(
-      () => {},
+  if (!skipEval) {
+    faithfulness = await evaluateFaithfulness(
+      answer,
+      sources.map((s) => s.content),
     );
+    answerRelevance = await evaluateAnswerRelevance(question, answer);
+
+    if (traceId) {
+      // Close the observability loop: cost + latency (Step 5) + faithfulness +
+      // answer_relevance (Step 6 extended / Option B). Best-effort, never blocks.
+      await Promise.all([
+        scoreTrace(traceId, "faithfulness", faithfulness.score, faithfulness.reasoning).catch(
+          () => {},
+        ),
+        scoreTrace(
+          traceId,
+          "answer_relevance",
+          answerRelevance.score,
+          answerRelevance.reasoning,
+        ).catch(() => {}),
+      ]);
+    }
   }
 
-  return { answer, sources, traceId, faithfulness };
+  return { answer, sources, traceId, faithfulness, answerRelevance };
 }
