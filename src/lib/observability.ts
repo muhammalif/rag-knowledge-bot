@@ -40,6 +40,38 @@ export function initLangfuse(): void {
 }
 
 /**
+ * Best-effort: attach a numeric score to a Langfuse trace (e.g. faithfulness).
+ * Fails silently — never blocks the request path.
+ */
+export async function scoreTrace(
+  traceId: string,
+  name: string,
+  value: number,
+  comment?: string,
+): Promise<void> {
+  const pk = process.env.LANGFUSE_PUBLIC_KEY;
+  const sk = process.env.LANGFUSE_SECRET_KEY;
+  const baseUrl =
+    process.env.LANGFUSE_BASE_URL ||
+    process.env.LANGFUSE_HOST ||
+    "https://cloud.langfuse.com";
+  if (!pk || !sk) return;
+  const auth = Buffer.from(`${pk}:${sk}`).toString("base64");
+  try {
+    const resp = await fetch(`${baseUrl.replace(/\/$/, "")}/api/public/scores`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Basic ${auth}` },
+      body: JSON.stringify({ traceId, name, value, comment }),
+    });
+    if (!resp.ok) {
+      console.warn(`[observability] Langfuse score ${name} failed: ${resp.status}`);
+    }
+  } catch (e) {
+    console.warn(`[observability] Langfuse score ${name} error: ${(e as Error).message}`);
+  }
+}
+
+/**
  * Build a Langfuse CallbackHandler for a single RAG operation.
  * Attach it to the Langchain LLM `.invoke` call via `{ callbacks: [handler] }`.
  * Read `handler.last_trace_id` after the run to deep-link the trace in the UI.

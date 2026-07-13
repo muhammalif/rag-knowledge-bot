@@ -2,7 +2,8 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { ChatGoogle } from "@langchain/google";
 import { getSupabase } from "./supabase";
-import { getHandler } from "./observability";
+import { getHandler, scoreTrace } from "./observability";
+import { evaluateFaithfulness, type FaithfulnessResult } from "./eval";
 
 // Same embedding model as ingest (gemini-embedding-001 → 3072-d). See src/lib/ingest.ts.
 const EMBEDDING_MODEL = "gemini-embedding-001";
@@ -25,6 +26,7 @@ export interface QueryResult {
   answer: string;
   sources: Source[];
   traceId?: string;
+  faithfulness?: FaithfulnessResult;
 }
 
 function getEmbeddings(): GoogleGenerativeAIEmbeddings {
@@ -112,5 +114,18 @@ export async function query(question: string, k: number = TOP_K): Promise<QueryR
     content: r.content,
   }));
 
-  return { answer, sources, traceId: handler.last_trace_id ?? undefined };
+  const faithfulness = await evaluateFaithfulness(
+    answer,
+    sources.map((s) => s.content),
+  );
+
+  const traceId = handler.last_trace_id ?? undefined;
+  if (traceId) {
+    // Close the observability loop: cost + latency (Step 5) + faithfulness (Step 6).
+    await scoreTrace(traceId, "faithfulness", faithfulness.score, faithfulness.reasoning).catch(
+      () => {},
+    );
+  }
+
+  return { answer, sources, traceId, faithfulness };
 }

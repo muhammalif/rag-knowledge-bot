@@ -11,7 +11,8 @@
     "test:split": "tsx scripts/test-split.ts",
     "test:ingest": "tsx scripts/test-ingest.ts",
     "test:query": "tsx scripts/test-query.ts",
-    "test:monitor": "tsx scripts/test-monitor.ts"
+    "test:monitor": "tsx scripts/test-monitor.ts",
+    "test:eval": "tsx scripts/test-eval.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.2.2",

@@ -7,8 +7,8 @@
 | 2 | Ingest | ✅ DONE | `ingestDocument`, `/api/ingest`, `seed.ts`, `test-ingest.ts`, `test-split.ts` — `tsc --noEmit` + split test PASS |
 | 3 | Retrieve + Generate | ✅ DONE | `/api/query` + citation; embed→match_docs→ChatGoogle(gemini-flash-latest) |
 | 4 | UI | ✅ DONE | `src/app/page.tsx` client component: ask + ingest form + citation sources |
-| 5 | Monitoring | ⏳ PENDING | Langfuse `CallbackHandler` |
-| 6 | Eval set | ⏳ PENDING | golden Q&A + skor |
+| 5 | Monitoring | ✅ DONE | Langfuse OTel (`@langfuse/otel` + `CallbackHandler`) — trace diverifikasi mendarat, token+latency auto-capture |
+| 6 | Eval set | ✅ DONE | faithfulness LLM-judge (`eval.ts`) + score→Langfuse via public API — verified 100% |
 
 ## Step 1 — Done ✅
 - `npx create-next-app` (Next 16, TS, src/, Tailwind v4).
@@ -34,12 +34,14 @@
 | 2026-07-12 | `scripts/test-query.ts` (integration test) | assert answer non-empty + sources well-formed; jalan end-to-end (embed→rpc→chat) |
 | 2026-07-12 | `Source.content` disertakan di response query | UI bisa tampilin snippet citation (faithful preview), ga perlu fetch ulang |
 | 2026-07-12 | UI = client component (`"use client"`) + ingest box | Next 16 valid; demo self-contained (paste doc → ask) |
+| 2026-07-13 | Langfuse v5 = OTel-based; global `NodeTracerProvider` + `LangfuseSpanProcessor` (`observability.ts`) | `CallbackHandler` hanya buat span, butuh tracer provider biar diekspor; `@opentelemetry/sdk-trace-node` must `^2` (dedupe sdk-trace-base) |
+| 2026-07-13 | Faithfulness via LLM-judge Gemini temp 0 (`eval.ts`) + score→Langfuse `POST /api/public/scores` | `CallbackHandler` tidak punya method `score()`; score dikirim best-effort (fail silent) |
 
 ## Open Items / Risks
 - Next.js 16 bleeding edge — verifikasi konvensi route/UI sebelum Step 2–4.
 - `@langchain/google` v0.2.1 masih 0.x — API chat bisa berubah.
 - Embedding 3072-d (`gemini-embedding-001`) harus konsisten dgn `vector(3072)`; ANN index di-drop (pgvector cap 2000-dim) → exact cosine scan.
-- Step 6 eval set butuh definisi golden Q&A dari `interview_prep_master.md`.
+- Step 6 faithfulness ✅; answer-relevance + golden Q&A set masih optional (belum dibuat).
 
 ## Next Action
-Implementasi **Step 5 — Monitoring**: tempel `CallbackHandler` Langfuse di embed + generate (`src/lib/query.ts`, `src/lib/ingest.ts`). Lalu Step 6 (eval set).
+Step 1–6 SELESAI (kode lokal, belum push remote). Sisa: (a) commit Step 6 ke lokal repo; (b) push ke GitHub setelah dapat URL repo; (c) optional tambah answer-relevance score + golden Q&A set (Step 6 extended); (d) tulis README demo + catatan interview.

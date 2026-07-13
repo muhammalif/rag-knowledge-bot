@@ -14,6 +14,12 @@ interface QueryResponse {
   answer: string;
   sources: Source[];
   traceId?: string;
+  faithfulness?: {
+    score: number;
+    faithful: boolean;
+    unsupportedClaims: string[];
+    reasoning: string;
+  };
 }
 
 // Render answer text, turning inline [[n]] markers into anchors that jump to
@@ -175,6 +181,30 @@ export default function Home() {
               >
                 View trace in Langfuse ↗
               </a>
+            )}
+
+            {result.faithfulness && (
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-zinc-700">Faithfulness</span>
+                  <span
+                    className={
+                      result.faithfulness.faithful
+                        ? "rounded bg-green-100 px-1.5 py-0.5 text-xs font-semibold text-green-700"
+                        : "rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-700"
+                    }
+                  >
+                    {(result.faithfulness.score * 100).toFixed(0)}%
+                  </span>
+                </div>
+                {result.faithfulness.unsupportedClaims.length > 0 && (
+                  <ul className="mt-2 list-disc pl-5 text-xs text-zinc-600">
+                    {result.faithfulness.unsupportedClaims.map((c, i) => (
+                      <li key={i}>{c}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
 
             <div>
