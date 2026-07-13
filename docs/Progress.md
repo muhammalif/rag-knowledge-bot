@@ -44,4 +44,4 @@
 - Step 6 faithfulness ✅; answer-relevance + golden Q&A set masih optional (belum dibuat).
 
 ## Next Action
-Step 1–6 SELESAI (kode lokal, belum push remote). Sisa: (a) commit Step 6 ke lokal repo; (b) push ke GitHub setelah dapat URL repo; (c) optional tambah answer-relevance score + golden Q&A set (Step 6 extended); (d) tulis README demo + catatan interview.
+Step 1–6 SELESAI & committed lokal (`ee6bc3e` Step 1–5, `41d34e2` Step 6), belum push remote. Sisa: (a) push ke GitHub setelah dapat URL repo; (b) optional tambah answer-relevance score + golden Q&A set (Step 6 extended); (c) tulis README demo + catatan interview; (d) deploy Vercel + Supabase.

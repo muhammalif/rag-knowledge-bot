@@ -9,7 +9,7 @@
 ```bash
 cd rag-knowledge-bot
 npm install
-npm install -D tsx          # untuk jalanin script TS
+# tsx sudah ada di devDependencies — tidak perlu install lagi
 ```
 
 ## 2. Environment (.env.local, root project)
@@ -20,6 +20,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...      # Supabase Dashboard → Settings → API 
 LANGFUSE_PUBLIC_KEY=pk-...            # https://cloud.langfuse.com → project Settings → API Keys
 LANGFUSE_SECRET_KEY=***
 LANGFUSE_HOST=https://cloud.langfuse.com
+LANGFUSE_BASE_URL=https://cloud.langfuse.com   # yang dibaca observability.ts (fallback LANGFUSE_HOST)
 ```
 JANGAN commit `.env.local`.
 

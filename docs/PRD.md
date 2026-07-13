@@ -30,13 +30,13 @@ Bot knowledge berbasis RAG yang:
 | F6 | Upload doc bebas via UI (bukan cuma seed) | Stretch | 4 |
 
 ## 5. Success Criteria
-- **Minimal**: upload → tanya → jawab + citation sumber jalan.
-- **Plus**: Langfuse trace kelihatan (cost / latency P95 / faithfulness).
-- **Stretch**: mini eval set 5–10 Q&A golden → faithfulness ≥ 0.8 & answer relevance ≥ 0.8.
-- Deploy: Vercel + Supabase cloud (interviewer bisa buka link live).
+- **Minimal**: ✅ upload → tanya → jawab + citation sumber jalan.
+- **Plus**: ✅ Langfuse trace kelihatan (cost / latency / faithfulness) — trace + score terverifikasi mendarat.
+- **Stretch**: faithfulness eval ✅ (LLM-judge, 100% pada `test-eval`); golden Q&A set + answer-relevance masih optional (belum dibuat).
+- **Deploy**: Vercel + Supabase cloud — belum deploy (interviewer bisa buka link live nanti).
 
 ## 6. Scope
-- **In**: RAG sederhana, 1 collection dokumen, citation via JSON output LLM, Langfuse observability, eval set kecil.
+- **In**: RAG sederhana, 1 collection dokumen, citation via inline `[[n]]` ke retrieved chunk (faithful, bukan parse JSON LLM), Langfuse observability + faithfulness eval, eval set kecil.
 - **Out (non-goals)**: multi-user auth, RBAC, fine-tuning, agentic multi-hop reasoning, production-scale indexing, streaming (bisa stretch).
 
 ## 7. Pemetaan ke JD (interview narrative)

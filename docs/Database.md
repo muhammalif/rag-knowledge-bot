@@ -66,5 +66,5 @@ $$;
 ## 9. Verifikasi
 ```bash
 node scripts/test-db.mjs        # count = 0 tanpa error
-npx tsx scripts/test-ingest.ts  # count>0, embedding non-null, dim=768
+npx tsx scripts/test-ingest.ts  # count>0, embedding non-null, dim=3072
 ```
