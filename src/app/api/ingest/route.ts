@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ingestDocument } from "@/lib/ingest";
+import { randomUUID } from "node:crypto";
 
 // Node runtime required: uses @supabase/supabase-js + Gemini SDK (no Edge APIs).
 export const runtime = "nodejs";
 // Never cache ingestion — always run per request.
 export const dynamic = "force-dynamic";
+
+function traceId(): string {
+  return randomUUID().slice(0, 8);
+}
 
 interface IngestBody {
   text?: string;
@@ -39,8 +44,10 @@ export async function POST(req: NextRequest) {
     const result = await ingestDocument(text, source ?? "unknown");
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
+    const tid = traceId();
+    console.error(`[ingest:${tid}]`, e);
     return NextResponse.json(
-      { error: (e as Error).message },
+      { error: "Ingestion failed", traceId: tid },
       { status: 500 },
     );
   }

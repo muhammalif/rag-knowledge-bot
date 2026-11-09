@@ -155,13 +155,14 @@ async function main() {
     assert(mockIngest.calls[0].source === "doc.md", `Expected source 'doc.md', got '${mockIngest.calls[0].source}'`);
   });
 
-  await test("6. POST /api/ingest: ingestDocument throw Error('boom') -> 500, response {error: 'boom'}", async () => {
+  await test("6. POST /api/ingest: ingestDocument throw Error('boom') -> 500, response {error: 'Ingestion failed', traceId}", async () => {
     mockIngest.mockRejectedValue(new Error("boom"));
     const req = createRequest("http://localhost:3000/api/ingest", { text: "halo" });
     const res = await ingestPOST(req);
     assert(res.status === 500, `Expected status 500, got ${res.status}`);
     const data = await res.json();
-    assert(deepEqual(data, { error: "boom" }), `Expected { error: "boom" }, got ${JSON.stringify(data)}`);
+    assert(data.error === "Ingestion failed", `Expected error 'Ingestion failed', got ${JSON.stringify(data)}`);
+    assert(typeof data.traceId === "string" && data.traceId.length > 0, `Expected traceId string, got ${JSON.stringify(data)}`);
     assert(mockIngest.callCount === 1, `Expected ingestDocument calls to be 1, got ${mockIngest.callCount}`);
   });
 
@@ -233,13 +234,14 @@ async function main() {
     assert(deepEqual(mockQuery.calls[0].opts, { k: 3 }), `Expected opts { k: 3 }, got ${JSON.stringify(mockQuery.calls[0].opts)}`);
   });
 
-  await test("11. POST /api/query: query throw Error('rpc down') -> 500, response {error: 'rpc down'}", async () => {
+  await test("11. POST /api/query: query throw Error('rpc down') -> 500, response {error: 'Query failed', traceId}", async () => {
     mockQuery.mockRejectedValue(new Error("rpc down"));
     const req = createRequest("http://localhost:3000/api/query", { question: "x" });
     const res = await queryPOST(req);
     assert(res.status === 500, `Expected status 500, got ${res.status}`);
     const data = await res.json();
-    assert(deepEqual(data, { error: "rpc down" }), `Expected { error: "rpc down" }, got ${JSON.stringify(data)}`);
+    assert(data.error === "Query failed", `Expected error 'Query failed', got ${JSON.stringify(data)}`);
+    assert(typeof data.traceId === "string" && data.traceId.length > 0, `Expected traceId string, got ${JSON.stringify(data)}`);
     assert(mockQuery.callCount === 1, `Expected query calls to be 1, got ${mockQuery.callCount}`);
   });
 

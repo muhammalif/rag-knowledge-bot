@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/query";
+import { randomUUID } from "node:crypto";
 
 // Node runtime required: uses @supabase/supabase-js + Gemini SDK (no Edge APIs).
 export const runtime = "nodejs";
 // Never cache queries — always run per request against fresh retrieval.
 export const dynamic = "force-dynamic";
+
+function traceId(): string {
+  return randomUUID().slice(0, 8);
+}
 
 interface QueryBody {
   question?: string;
@@ -39,8 +44,10 @@ export async function POST(req: NextRequest) {
     const result = await query(question, { k });
     return NextResponse.json(result, { status: 200 });
   } catch (e) {
+    const tid = traceId();
+    console.error(`[query:${tid}]`, e);
     return NextResponse.json(
-      { error: (e as Error).message },
+      { error: "Query failed", traceId: tid },
       { status: 500 },
     );
   }
