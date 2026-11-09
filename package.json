@@ -2,6 +2,9 @@
   "name": "rag-knowledge-bot",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.15.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,7 +16,8 @@
     "test:query": "tsx scripts/test-query.ts",
     "test:monitor": "tsx scripts/test-monitor.ts",
     "test:eval": "tsx scripts/test-eval.ts",
-    "test:golden": "tsx scripts/test-golden.ts"
+    "test:golden": "tsx scripts/test-golden.ts",
+    "test:routes": "tsx scripts/test-routes.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.2.2",
