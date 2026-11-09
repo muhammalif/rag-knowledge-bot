@@ -55,3 +55,10 @@ Step 1–6 + Option B DIIMPLEMENTASIKAN (tsc clean). Golden eval pipeline terver
 - `engines.node >=22.15.0` ditambah (registerHooks requirement).
 - 4/4 mutasi terbunuh — test benar-benar nge-detect kerusakan kode.
 - Commit: `6559571`, sudah di-push.
+
+## 2026-11-09 — Error Sanitization + TraceId
+- `/api/ingest` & `/api/query`: ganti raw `(e as Error).message` → generic message + `traceId` (8-char UUID).
+- Response 500 sekarang: `{ error: "Ingestion failed", traceId: "a1b2c3d4" }` / `{ error: "Query failed", traceId: "..." }`.
+- Detail error di-log server (`console.error`) dengan traceId buat debugging.
+- Test P0 di-update expect format baru; mutation check tetap 4/4 killed.
+- Commit: `d225d9a`, sudah di-push.
