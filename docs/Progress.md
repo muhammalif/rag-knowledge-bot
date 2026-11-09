@@ -45,4 +45,13 @@
 - Step 6 + Option B ✅: faithfulness + answer-relevance di request path (`query.ts`); golden Q&A set + correctness eval di `test-golden.ts` (offline/CI).
 
 ## Next Action
-Step 1–6 + Option B DIIMPLEMENTASIKAN (tsc clean). Golden eval pipeline terverifikasi (test:eval 100% + item-1 golden 100/100/100); full 10-item run pending free-tier quota recovery — re-run `npm run test:golden` saat kuota pulih. Belum commit (menunggu run hijau) & belum push. Sisa: commit Option B lokal → (a) push ke GitHub (repo: github.com/muhammalif/rag-knowledge-bot); (b) README demo + catatan interview; (c) deploy Vercel + Supabase.
+Step 1–6 + Option B DIIMPLEMENTASIKAN (tsc clean). Golden eval pipeline terverifikasi (test:eval 100% + item-1 golden 100/100/100); full 10-item run pending free-tier quota recovery — re-run `npm run test:golden` saat kuota pulih.
+
+**COMMIT + PUSH SELESAI (2026-11-09)**: `87a6556` (Option B) dan `108e4db` (docs consolidation) sudah di-push ke `origin/coy/rag-bot`. Roadmap tersisa: (a) README demo + catatan interview; (b) deploy Vercel + Supabase.
+
+## 2026-11-09 — Route Handler Unit Tests
+- Ditambah: `scripts/test-routes.ts` (11 kasus offline) + `scripts/__mocks__/{ingest,query}.ts` via `module.registerHooks` (Node 24).
+- Menutupi `/api/ingest` (400/201/500) dan `/api/query` (400/200/500), verifikasi argumen & call count.
+- `engines.node >=22.15.0` ditambah (registerHooks requirement).
+- 4/4 mutasi terbunuh — test benar-benar nge-detect kerusakan kode.
+- Commit: `6559571`, sudah di-push.
